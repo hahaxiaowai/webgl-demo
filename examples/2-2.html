@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>draw Triangle</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+      }
+      .drawBox {
+        
+      }
+    </style>
+  </head>
+  <body onload="main()">
+    <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <div id="text"></div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script>
+      function main() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "void main() {" +
+          "gl_Position = a_Position;" +
+          "gl_PointSize = 10.0;"+
+          "}";
+        const FSHADER_SOURCE =
+          "precision mediump float;" + // 精度限定词 此处为中等精度
+          "uniform vec4 u_FragColor;\n" +
+          "void main() {gl_FragColor =u_FragColor;}";
+        const drawBox = document.getElementById("drawBox");
+        const gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+
+        // 获取参数 参数变量明不可以gl_ webgl_做前缀
+        let a_Position = gl.getAttribLocation(gl.program, "a_Position");
+        // 获取颜色变量
+        const u_FragColor=gl.getUniformLocation(gl.program,'u_FragColor')
+        // 设置背景颜色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        // 用设置的颜色擦除绘图区域
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // 绑定鼠标点击事件
+        const points= []
+        const points2= []
+        const colors= []
+        // 创建缓冲区
+        const vertexBuffer = gl.createBuffer();
+          // 缓冲区绑定到目标
+          gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffer);
+          // 将缓冲区对象分配给a_Position
+          gl.vertexAttribPointer(a_Position,2,gl.FLOAT,false,0,0)
+          // 连接a_Position变量与分配给它的缓冲区对象
+          gl.enableVertexAttribArray(a_Position);
+        drawBox.onmousedown = function (e) {
+          const x = (e.offsetX - drawBox.height / 2) / (drawBox.height / 2);
+          const y = (drawBox.width / 2 - e.offsetY) / (drawBox.width / 2);
+          points.push([x,y])
+          points2.push(x)
+          points2.push(y)
+          const vertices=new Float32Array(points2);
+          // 写入数据
+          gl.bufferData(gl.ARRAY_BUFFER,vertices,gl.STATIC_DRAW)
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          gl.drawArrays(gl.POINTS,0,points.length)
+          gl.drawArrays(gl.TRIANGLE_FAN,0,points.length)
+          gl.drawArrays(gl.LINES,0,points.length)
+          const color =randomColor()
+          gl.uniform4f(u_FragColor,...color)
+          document.getElementById("text").innerHTML =
+            "<span>X:" + x + ",</span>" + "<span>Y:" + y + "</span>";
+        };
+      }
+      function randomColor(){
+        return[Math.random(),Math.random(),Math.random(),1.0]
+      }
+    </script>
+  </body>
+</html>

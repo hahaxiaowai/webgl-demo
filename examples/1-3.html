@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>draw Point by click</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+      }
+      .drawBox {
+        /* margin-top: 10px; */
+        /* margin-left: 10px; */
+        /* background-color: antiquewhite; */
+        /* width: 600px;
+        height: 400px; */
+      }
+    </style>
+  </head>
+  <body onload="main()">
+    <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <div id="text"></div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script>
+      function main() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "void main() {" +
+          "gl_Position = a_Position;" +
+          "gl_PointSize =10.0;" +
+          "}";
+        const FSHADER_SOURCE =
+          "precision mediump float;" + // 精度限定词 此处为中等精度
+          "uniform vec4 u_FragColor;\n" +
+          "void main() {gl_FragColor =u_FragColor;}";
+        const drawBox = document.getElementById("drawBox");
+        const gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        // 获取参数 参数变量明不可以gl_ webgl_做前缀
+        let a_Position = gl.getAttribLocation(gl.program, "a_Position");
+        // 获取颜色变量
+        const u_FragColor=gl.getUniformLocation(gl.program,'u_FragColor')
+        // 设置参数
+        gl.vertexAttrib3f(a_Position, 0.0, 0.0, 0.0);
+        // 设置背景颜色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        // 用设置的颜色擦除绘图区域
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // webgl原点在中心，drawArrays从第一个点开始，每次绘制一个点，绘制第三个参数的次数
+        gl.drawArrays(gl.POINTS, 0, 1);
+        
+        // 绑定鼠标点击事件
+        const points= []
+        const colors= []
+        drawBox.onmousedown = function (e) {
+          const x = (e.offsetX - drawBox.height / 2) / (drawBox.height / 2);
+          const y = (drawBox.width / 2 - e.offsetY) / (drawBox.width / 2);
+          points.push([x,y])
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          // 连续画需要循环设置每个点属性然后drawArrays
+          // webgl绘制是在颜色缓冲区上绘制的，绘制结束后显示在页面上，颜色缓冲区重置
+          // 绘制》页面》重置
+          // ？？？？？？什么时候算绘制结束？？？？？？？？？？？
+          // ？？？？？？为什么循环就可以画出多个点？？？？？？？
+          //循环画，可以连续出点,不循环话画就不出点
+          for (let i = 0; i < points.length; i++) {
+            const element = points[i];
+            gl.vertexAttrib3f(a_Position, ...element, 0.0);
+            const color =randomColor()
+            gl.uniform4f(u_FragColor,...color)
+            gl.drawArrays(gl.POINTS,0,1)  
+          }
+          
+          
+          // gl.vertexAttrib3f(a_Position, x, y, 0.0);
+          // gl.drawArrays(gl.POINTS,0,1)
+          document.getElementById("text").innerHTML =
+            "<span>X:" + x + ",</span>" + "<span>Y:" + y + "</span>";
+        };
+      }
+      function randomColor(){
+        return[Math.random(),Math.random(),Math.random(),1.0]
+      }
+    </script>
+  </body>
+</html>
