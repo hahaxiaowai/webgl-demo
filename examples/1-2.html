@@ -2,15 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0" /> -->
-    <title>Draw Point</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>draw Point</title>
     <style>
-      body,html {
+      body,
+      html {
         padding: 0;
         margin: 0;
       }
       .drawBox {
-        background-color: antiquewhite;
+        /* background-color: antiquewhite; */
         /* width: 600px;
         height: 400px; */
       }
@@ -18,14 +19,68 @@
   </head>
   <body onload="main()">
     <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
-    <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
     <script>
       function main() {
-        const drawBox = document.getElementById('drawBox');
-        const ctx = drawBox.getContext("2d");
-        ctx.fillStyle = "rgba(0,0,255,1)";
-        // canvas容器左上角为起点，fillRect(x,y,wdith,height) 左上原点坐标以及宽高
-        ctx.fillRect(50, 50, 50, 50); //??? 宽高不对
+        // 定点着色器
+        // GLAL ES 是一种强类型语言，所以坐标和尺寸里只能设置float类型
+        // vec4(x,y,z,w) 采用的是齐次坐标
+        // xyz即三维坐标，w作为第四个变量传入，便组成了齐次坐标,将坐标升维变成四维坐标
+        // （x,y,z,w)等价于三维坐标(x/w,y/w,z/w)
+        // 如果齐次坐标第四个分量是1，该坐标可以作为三维坐标使用
+        // w必须大于0，当他趋近于0时，那么所代表的点将趋近于无穷远，所以在齐次坐标中有无穷的概念
+        // 其次坐标的存在，使得用矩阵乘法来描述顶点变换成为可能，在三维图形系统计算时，通常采用齐次坐标表示顶点的三维坐标
+        const VSHADER_SOURCE =
+          "void main() {" +
+          "gl_Position = vec4(0,0.0,0.0,1.0);" + //设置坐标
+          "gl_PointSize = 10.0;" + //设置尺寸
+          "}";
+        // 片元着色器
+        const FSHADER_SOURCE =
+          "void main() {gl_FragColor =vec4(1.0,0.0,0.0,1.0);}";
+        const drawBox = document.getElementById("drawBox");
+        const gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        // if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+        //   console.log("初始化shader失败");
+        //   return;
+        // }
+        // 设置背景颜色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        // 用设置的颜色擦除绘图区域
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // webgl原点在中心，drawArrays从第一个点开始，每次绘制一个点，绘制第三个参数的次数
+        gl.drawArrays(gl.POINTS, 0, 1);
+        main2()
+      }
+      function main2() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "void main() {" +
+          "gl_Position = a_Position;" +
+          "gl_PointSize =10.0;" +
+          "}";
+        const FSHADER_SOURCE =
+          "void main() {gl_FragColor =vec4(1.0,0.0,0.0,1.0);}";
+        const drawBox = document.getElementById("drawBox2");
+        const gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        // 获取参数 参数变量明不可以gl_ webgl_做前缀
+        let a_Position =gl.getAttribLocation(gl.program,'a_Position')
+        // 设置参数
+        gl.vertexAttrib3f(a_Position,0.0,0.0,0.0)
+        // 设置背景颜色
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        // 用设置的颜色擦除绘图区域
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // webgl原点在中心，drawArrays从第一个点开始，每次绘制一个点，绘制第三个参数的次数
+        gl.drawArrays(gl.POINTS, 0, 1);
       }
     </script>
   </body>
