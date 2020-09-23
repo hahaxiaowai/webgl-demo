@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rotated and triangle</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body onload="main()">
+    <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <div>
+      <button onmousedown="down('left')" onmouseup="up()">逆时针</button
+      ><button onmousedown="down('right')" onmouseup="up()">顺时针</button>
+    </div>
+    <div>
+      <button onmousedown="down2('left')" onmouseup="up()">左</button
+      ><button onmousedown="down2('right')" onmouseup="up()">右</button>
+    </div>
+    <div>
+      <button onmousedown="down2('up')" onmouseup="up()">上</button
+      ><button onmousedown="down2('down')" onmouseup="up()">下</button>
+    </div>
+    <div id="text"></div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script>
+      let u_Translation, u_FragColor, gl;
+      let tX = 0.0;
+      let tY = 0.0;
+      let tZ = 0.0;
+      let sX = 0.0;
+      let sY = 0.0;
+      let sZ = 0.0;
+      let timeInterval;
+      let angle = 0.0;
+      let u_xformMatrix;
+      function main() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "uniform mat4 u_xformMatrix;\n" +
+          "void main() {" +
+          "gl_Position = a_Position * u_xformMatrix;\n" +
+          "}";
+        const FSHADER_SOURCE =
+          "precision mediump float;" + // 精度限定词 此处为中等精度
+          "uniform vec4 u_FragColor;\n" +
+          "void main() {gl_FragColor =u_FragColor;}";
+        const drawBox = document.getElementById("drawBox");
+        gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        const vertices = new Float32Array([0.0, 0.0, 0.5, 0.0, 0.25, 0.25]);
+        let a_Position = gl.getAttribLocation(gl.program, "a_Position");
+
+        // 创建缓冲区
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        u_xformMatrix = gl.getUniformLocation(gl.program, "u_xformMatrix");
+        const radian = (Math.PI * 0) / 180;
+        const cosB = Math.cos(radian);
+        const sinB = Math.sin(radian);
+        const xformMatrix = new Float32Array([
+          cosB,
+          sinB,
+          0.0,
+          0.0,
+          -sinB,
+          cosB,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+        ]);
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function randomColor() {
+        return [Math.random(), Math.random(), Math.random(), 1.0];
+      }
+      function rotated(key) {
+        switch (key) {
+          case "right":
+            angle += 1;
+            break;
+          case "left":
+            angle -= 1;
+            break;
+          default:
+            break;
+        }
+        // 转为弧度
+        const radian = (Math.PI * angle) / 180;
+        const cosB = Math.cos(radian);
+        const sinB = Math.sin(radian);
+        // 以列为主序
+        const xformMatrix = new Float32Array([
+          cosB,
+          sinB,
+          0.0,
+          0.0,
+          -sinB,
+          cosB,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+        ]);
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function translation(key) {
+        switch (key) {
+          case "right":
+            tX += 0.1;
+            tY += 0.1
+            break;
+          case "left":
+            tX += -0.1;
+            break;
+          case "up":
+            tY += 0.1;
+            break;
+          case "down":
+            tY += -0.1;
+            break;
+
+          default:
+            break;
+        }
+        const xformMatrix = new Float32Array([
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+
+          tX,
+          tY,
+          tZ,
+          1.0,
+        ]);
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function zoom(key) {
+        switch (key) {
+          case "in":
+            tX += 0.1;
+            break;
+          case "out":
+            tX += -0.1;
+            break;
+          default:
+            break;
+        }
+        const xformMatrix = new Float32Array([
+          sX,
+          0.0,
+          0.0,
+          0.0,
+
+          0.0,
+          sY,
+          0.0,
+          0.0,
+
+          0.0,
+          0.0,
+          sZ,
+          0.0,
+
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+        ]);
+        gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function down(key) {
+        if (timeInterval) {
+          clearInterval(timeInterval);
+        }
+        timeInterval = setInterval((v) => {
+          rotated(key);
+        }, 10);
+      }
+      function up() {
+        setTimeout((v) => {
+          clearInterval(timeInterval);
+        }, 300);
+      }
+      function down2(key) {
+        if (timeInterval) {
+          clearInterval(timeInterval);
+        }
+        timeInterval = setInterval((v) => {
+          translation(key);
+        }, 10);
+      }
+    </script>
+  </body>
+</html>

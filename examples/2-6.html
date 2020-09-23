@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>rotated</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body onload="main()">
+    <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <div>
+      <button onmousedown="down('left')" onmouseup="up('left')">向左</button
+      ><button onmousedown="down('right')" onmouseup="up('right')">向右</button>
+    </div>
+
+    <div id="text"></div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script>
+      let u_Translation, u_FragColor, gl;
+      let timeInterval;
+      let angle = 0.0;
+      let u_CosB,u_SinB;
+      function main() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "uniform float u_CosB, u_SinB;\n" +
+          "void main() {" +
+          "gl_Position.x = a_Position.x * u_CosB - a_Position.y * u_SinB;\n" +
+          "gl_Position.y =a_Position.x * u_SinB + a_Position.y * u_CosB;\n"+
+          "gl_Position.z =a_Position.z;\n"+
+          "gl_Position.w =1.0;\n"+
+          "}";
+        const FSHADER_SOURCE =
+          "precision mediump float;" + // 精度限定词 此处为中等精度
+          "uniform vec4 u_FragColor;\n" +
+          "void main() {gl_FragColor =u_FragColor;}";
+        const drawBox = document.getElementById("drawBox");
+        gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        const vertices = new Float32Array([0.0, 0.0, 0.5, 0.0, 0.25, 0.25]);
+        let a_Position = gl.getAttribLocation(gl.program, "a_Position");
+
+        // 创建缓冲区
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        u_CosB =gl.getUniformLocation(gl.program,'u_CosB')
+        u_SinB =gl.getUniformLocation(gl.program,'u_SinB')
+        u_FragColor = gl.getUniformLocation(gl.program, "u_FragColor");
+
+        const radian = Math.PI *0 /180
+        const cosB = Math.cos(radian)
+        const sinB = Math.sin(radian)
+        gl.uniform1f(u_CosB,cosB);
+        gl.uniform1f(u_SinB, sinB);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function randomColor() {
+        return [Math.random(), Math.random(), Math.random(), 1.0];
+      }
+      function rotated(key) {
+        switch (key) {
+          case "right":
+            angle += 1;
+            break;
+          case "left":
+            angle -= 1;
+            break;
+          default:
+            break;
+        }
+        // 转为弧度
+        const radian = Math.PI *angle /180
+        const cosB = Math.cos(radian)
+        const sinB = Math.sin(radian)
+        gl.uniform1f(u_CosB,cosB);
+        gl.uniform1f(u_SinB, sinB);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      function down(key) {
+        if(timeInterval) {
+          clearInterval(timeInterval)
+        }
+        timeInterval=setInterval(v=>{
+          rotated(key)
+        },10)
+      }
+      function up(key) {
+        setTimeout(v=>{
+          clearInterval(timeInterval)
+        },300)
+      }
+    </script>
+  </body>
+</html>

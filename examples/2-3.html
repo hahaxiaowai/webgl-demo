@@ -68,23 +68,24 @@
           const sequence = points.length / 2 - 1;
           if (points.length % 2 === 0) {
             gl.clear(gl.COLOR_BUFFER_BIT);
-            points.push([points[sequence][0],points[sequence + 1][1]])
-            points2.push(points[sequence][0],points[sequence + 1][1])
+            points.push([points[sequence * 2][0],points[sequence * 2 + 1][1]])
+            points2.push(points[sequence * 2][0],points[sequence * 2 + 1][1])
             const vertices = new Float32Array(points2);
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
             gl.drawArrays(gl.TRIANGLES, sequence * 6, points.length);
             // 第二个三角形
-            points.push(points[sequence],points[sequence+1],[points[sequence+1][0],points[sequence][1]])
-            points2.push(...points[sequence],...points[sequence+1],points[sequence+1][0],points[sequence][1])
+            points.push(points[sequence * 2],points[sequence * 2+1],[points[sequence * 2+1][0],points[sequence * 2][1]])
+            points2.push(...points[sequence * 2],...points[sequence * 2 + 1],points[sequence * 2 + 1][0],points[sequence * 2][1])
             const vertices2 = new Float32Array(points2);
             gl.bufferData(gl.ARRAY_BUFFER, vertices2, gl.STATIC_DRAW);
-            gl.drawArrays(gl.TRIANGLES, sequence * 6 + 3, points.length);
+            gl.drawArrays(gl.TRIANGLES, 0, points.length);
           } else {
             const vertices = new Float32Array(points2);
             // 写入数据
             gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays(gl.POINTS, 0, points.length);
+            gl.drawArrays(gl.TRIANGLES, 0, points.length);
           }
           const color = randomColor();
           gl.uniform4f(u_FragColor, ...color);
