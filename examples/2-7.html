@@ -30,6 +30,10 @@
       <button onmousedown="down2('up')" onmouseup="up()">上</button
       ><button onmousedown="down2('down')" onmouseup="up()">下</button>
     </div>
+    <div>
+      <button onmousedown="down3('in')" onmouseup="up()">放大</button
+      ><button onmousedown="down3('out')" onmouseup="up()">缩小</button>
+    </div>
     <div id="text"></div>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
@@ -50,7 +54,8 @@
           "attribute vec4 a_Position;" +
           "uniform mat4 u_xformMatrix;\n" +
           "void main() {" +
-          "gl_Position = a_Position * u_xformMatrix;\n" +
+          // u_xformMatrix 必须放在前面
+          "gl_Position = u_xformMatrix * a_Position;\n" +
           "}";
         const FSHADER_SOURCE =
           "precision mediump float;" + // 精度限定词 此处为中等精度
@@ -59,7 +64,7 @@
         const drawBox = document.getElementById("drawBox");
         gl = getWebGLContext(drawBox);
         initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-        const vertices = new Float32Array([0.0, 0.0, 0.5, 0.0, 0.25, 0.25]);
+        const vertices = new Float32Array([0.0, 0.25, -0.25, -0.25, 0.25, -0.25]);
         let a_Position = gl.getAttribLocation(gl.program, "a_Position");
 
         // 创建缓冲区
@@ -142,7 +147,7 @@
         switch (key) {
           case "right":
             tX += 0.1;
-            tY += 0.1
+            // tY += 0.1;
             break;
           case "left":
             tX += -0.1;
@@ -162,17 +167,14 @@
           0.0,
           0.0,
           0.0,
-
           0.0,
           1.0,
           0.0,
           0.0,
-
           0.0,
           0.0,
           1.0,
           0.0,
-
           tX,
           tY,
           tZ,
@@ -186,10 +188,14 @@
       function zoom(key) {
         switch (key) {
           case "in":
-            tX += 0.1;
+            sX += 0.1;
+            sY += 0.1;
+            sZ += 0.1;
             break;
           case "out":
-            tX += -0.1;
+            sX -= 0.1;
+            sY -= 0.1;
+            sZ -= 0.1;
             break;
           default:
             break;
@@ -239,6 +245,14 @@
         }
         timeInterval = setInterval((v) => {
           translation(key);
+        }, 100);
+      }
+      function down3(key) {
+        if (timeInterval) {
+          clearInterval(timeInterval);
+        }
+        timeInterval = setInterval((v) => {
+          zoom(key);
         }, 10);
       }
     </script>
