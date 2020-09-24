@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Matrix</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body onload="main()">
+    <!-- 容器宽高只能在canvas上设置，不能在class中设置，两者设置效果不同 -->
+    <div>
+      <canvas class="drawBox" width="400" height="400" id="drawBox"></canvas>
+      <canvas class="drawBox" width="400" height="400" id="drawBox2"></canvas>
+    </div>
+    <div>
+      <button onclick="controlRotateSpeed('minus')">减速(逆时针)</button
+      ><button onclick="controlRotateSpeed('plus')">加速(逆时针)</button>
+    </div>
+    <div>
+      <button onclick="controlRotateSpeed('x+')">水平加速(向左)</button
+        ><button onclick="controlRotateSpeed('x-')">水平减速(向右)</button>
+    </div>
+    <!-- <div>
+      <button onclick="controlRotateSpeed('y+')">垂直加速(向上)</button
+        ><button onclick="controlRotateSpeed('y-')">垂直减速(向下)</button>
+    </div> -->
+    <div id="text"></div>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+    <script src="../lib/cuon-matrix.js"></script>
+    <script>
+      let u_FragColor, gl;
+      let tX = 0.0;
+      let tY = 0.0;
+      let tZ = 0.0;
+      let sX = 0.0;
+      let sY = 0.0;
+      let sZ = 0.0;
+      let timeInterval;
+      let angle = 0.0;
+      let angleSpeed = 10.0;
+      let tXSpeed = 0.5;
+      let tYSpeed = 0.0;
+      let u_xformMatrix;
+      let last_time = Date.now();
+      let modelMatrix;
+      function main() {
+        const VSHADER_SOURCE =
+          "attribute vec4 a_Position;" +
+          "uniform mat4 u_ModelMatrix;\n" +
+          "void main() {" +
+          "gl_Position = u_ModelMatrix * a_Position;\n" +
+          "}";
+        const FSHADER_SOURCE =
+          "void main() {gl_FragColor = vec4(0.0,1.0,1.0,1.0);}";
+        const drawBox = document.getElementById("drawBox");
+        gl = getWebGLContext(drawBox);
+        initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        const vertices = new Float32Array([
+          0.0,
+          0.0,
+          0.25,
+          0.25,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          -0.25,
+          0.25,
+          0.0,
+          0.0,
+          -0.5,
+          0.0,
+          -0.25,
+          -0.25,
+          0.0,
+          0.0,
+          0.0,
+          -0.5,
+          0.25,
+          -0.25,
+        ]);
+        let a_Position = gl.getAttribLocation(gl.program, "a_Position");
+        // 创建缓冲区
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT,  
+        , 0, 0);
+        gl.enableVertexAttribArray(a_Position);
+        modelMatrix = new Matrix4();
+        u_ModelMatrix = gl.getUniformLocation(gl.program, "u_ModelMatrix");
+        tick();
+      }
+      const tick = function () {
+        const frame1 = frame(angle);
+        angle =frame1.angle
+        tX = frame1.translate.tX
+        tY = frame1.translate.tY
+        drawFrame(gl, 12, angle, modelMatrix, u_ModelMatrix);
+        requestAnimationFrame(tick);
+      };
+      function drawFrame(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+        // 必须先平移再旋转，才能做到一边旋转一遍移动
+        // 如果先旋转，再平移，位置会移动到别处
+        modelMatrix.setTranslate(tX,tY,tZ)
+        modelMatrix.rotate(currentAngle, 0, 0, 1);
+        gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 12);
+      }
+      function frame() {
+        const now = Date.now();
+        const elapsed = now - last_time;
+        last_time = now;
+        const newAngle = angle + (angleSpeed * elapsed) / 1000.0;
+        let newX = tX - (tXSpeed * elapsed) / 1000.0;
+        const newY = tY + (tYSpeed * elapsed) / 1000.0;
+        if(newX>=1.5) newX=-1.5
+        if(newX<=-1.5) newX=1.5
+        // 确保返回度数小于360度
+        return {angle:newAngle % 360,translate:{
+          tX:newX<=-1.5?1.5:newX,
+          tY:newY<=-1.5?1.5:newY,
+        }};
+      }
+      function controlRotateSpeed(key) {
+        switch (key) {
+          case "plus":
+            angleSpeed +=10
+            break;
+          case "minus":
+            angleSpeed -=10
+            break;
+            case "x+":
+            tXSpeed +=0.1
+            break;
+            case "x-":
+            tXSpeed -=0.1
+            break;
+            case "y+":
+            tYSpeed +=0.1
+            break;
+            case "y-":
+            tYSpeed -=0.1
+            break;
+          default:
+            break;
+        }
+      }
+    </script>
+  </body>
+</html>

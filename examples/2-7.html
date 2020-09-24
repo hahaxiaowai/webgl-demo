@@ -64,7 +64,14 @@
         const drawBox = document.getElementById("drawBox");
         gl = getWebGLContext(drawBox);
         initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
-        const vertices = new Float32Array([0.0, 0.25, -0.25, -0.25, 0.25, -0.25]);
+        const vertices = new Float32Array([
+          0.0,
+          0.25,
+          -0.25,
+          -0.25,
+          0.25,
+          -0.25,
+        ]);
         let a_Position = gl.getAttribLocation(gl.program, "a_Position");
 
         // 创建缓冲区
@@ -167,14 +174,17 @@
           0.0,
           0.0,
           0.0,
+
           0.0,
           1.0,
           0.0,
           0.0,
+
           0.0,
           0.0,
           1.0,
           0.0,
+
           tX,
           tY,
           tZ,
