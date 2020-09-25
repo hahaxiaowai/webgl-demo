@@ -96,7 +96,7 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
         gl.vertexAttribPointer(a_Position, 2, gl.FLOAT,  
-        , 0, 0);
+        false, 0, 0);
         gl.enableVertexAttribArray(a_Position);
         modelMatrix = new Matrix4();
         u_ModelMatrix = gl.getUniformLocation(gl.program, "u_ModelMatrix");
